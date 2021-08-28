@@ -1,4 +1,5 @@
 import { ref, onMounted } from "vue"
+import { encode, decode } from "base64-arraybuffer"
 
 const getMediaRecorder = (): Promise<MediaRecorder> => {
   return new Promise(async (resolve) => {
@@ -8,16 +9,15 @@ const getMediaRecorder = (): Promise<MediaRecorder> => {
   })
 }
 
-type AudioHisotry = {
-  id: string
-  title: string
-  elm: HTMLAudioElement
+type StopObserver = (data: any) => void
+
+type Options = {
+  onStop: StopObserver
 }
 
-const useRecords = () => {
+const useRecords = (options: Options) => {
   const recording = ref(false)
   const audioTitle = ref("")
-  const audioHisotry = ref<AudioHisotry[]>([])
 
   const mediaRecorder = ref<MediaRecorder | null>(null)
   const audioChunks = ref<Blob[]>([])
@@ -32,19 +32,22 @@ const useRecords = () => {
       recording.value = true
     })
 
-    mediaRecorder_.addEventListener("stop", () => {
+    const stopHandler = async () => {
       const audioBlob = new Blob(audioChunks.value)
-      const audioUrl = URL.createObjectURL(audioBlob)
+      const data = await audioBlob.arrayBuffer()
+      const encodedData = encode(data)
 
-      audioHisotry.value.push({
+      options.onStop({
         id: new Date().toISOString(),
         title: audioTitle.value,
-        elm: new Audio(audioUrl),
+        encodedData,
       })
 
       audioTitle.value = ""
       recording.value = false
-    })
+    }
+
+    mediaRecorder_.addEventListener("stop", stopHandler)
     mediaRecorder.value = mediaRecorder_
   })
 
@@ -57,24 +60,21 @@ const useRecords = () => {
     mediaRecorder.value?.stop()
   }
 
-  const play = (audio: HTMLAudioElement) => {
-    audio.play()
-  }
+  const play = (encodedData: string) => {
+    const arrayBuffer = decode(encodedData)
+    const audioBlob = new Blob([arrayBuffer])
+    const audioUrl = URL.createObjectURL(audioBlob)
+    const audio = new Audio(audioUrl)
 
-  const clear = (id: string) => {
-    audioHisotry.value = audioHisotry.value.filter((history) => {
-      return history.id !== id
-    })
+    audio.play()
   }
 
   return {
     recording,
     audioTitle,
-    audioHisotry,
     start,
     stop,
     play,
-    clear,
   }
 }
 

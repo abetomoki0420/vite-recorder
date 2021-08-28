@@ -1,9 +1,32 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { ref, computed } from "vue"
+import useFirebase from "./composables/firebase"
 import useRecords from "./composables/record"
 
-const { recording, start, stop, play, clear, audioTitle, audioHisotry } =
-  useRecords()
+const { getCollection } = useFirebase()
+
+const recordsCollection = getCollection("records")
+
+const records = ref<any>([])
+recordsCollection.observe((data) => {
+  records.value = data
+})
+
+const save = async (data: any) => {
+  const { id, title, encodedData } = data
+
+  recordsCollection.save({
+    id,
+    title,
+    encodedData,
+  })
+}
+
+const { recording, start, stop, play, audioTitle } = useRecords({
+  onStop: async (data) => {
+    await save(data)
+  },
+})
 
 const disableInputTitle = computed(() => {
   if (recording.value) {
@@ -33,12 +56,11 @@ const disabledStart = computed(() => {
       <div>
         <h3>history</h3>
         <div>
-          <template v-if="audioHisotry.length > 0">
+          <template v-if="records.length > 0">
             <ol>
-              <li v-for="history in audioHisotry">
-                <span>{{ history.title }}</span>
-                <button @click="play(history.elm)">Play</button>
-                <button @click="clear(history.id)">x</button>
+              <li v-for="record in records">
+                <span>{{ record.title }}</span>
+                <button @click="play(record.encodedData)">Play</button>
               </li>
             </ol>
           </template>

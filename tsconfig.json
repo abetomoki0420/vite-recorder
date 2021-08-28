@@ -8,7 +8,7 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom", "@types/dom-mediacapture-record"]
+    "lib": ["esnext", "dom", "@types/dom-mediacapture-record", "@types/firebase"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
