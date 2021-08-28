@@ -7,7 +7,7 @@ import {
   onSnapshot,
 } from "firebase/firestore"
 
-import { config } from "../firebase"
+import { config } from "@/firebase.config"
 
 const firebaseInit = () => {
   const app = initializeApp(config)
